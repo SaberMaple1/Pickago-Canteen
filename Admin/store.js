@@ -1,49 +1,127 @@
-/*===== Shared storage: the SAME keys the admin portal uses  */
-const K={food:'pickagoLiveFood',orders:'pickagoLiveOrders',acc:'pickagoStudentAccounts',ses:'pickagoStudentSession'};
-const rd=(k,f)=>{
-  try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch{return f}
+const KEYS = {
+  food: 'pickagoLiveFood',
+  orders: 'pickagoLiveOrders',
+  admin: 'pickagoAdminProfile',
+  session: 'pickagoStaffSession',
 };
-const wr=(k,v)=>{
-  try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}
+
+const LOW_STOCK = 5;
+const STATUS = { PENDING: 'Pending', READY: 'Ready to Pick Up', DONE: 'Completed' };
+
+
+function dayKey(value) {
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+const todayKey = () => dayKey(new Date());
+const orderDate = (o) => o.createdAt || new Date();
+
+const DEFAULT_ADMIN = {
+  name: 'Admin',
+  role: 'Canteen Manager',
+  username: 'admin',
+  password: 'admin123',
+  email: '',
+  phone: '',
+  photo: '',
+  theme: 'light',
+  accent: 'ube',
+  size: 'normal',
+  idleMinutes: 0,
+  extraCats: [],
+  lastLogin: null,
 };
-const foods=()=>(rd(K.food,[])||[]).filter(f=>f&&f.name).map(f=>({emoji:'🍽️',desc:'',image:'',...f,price:+f.price||0,stock:Math.max(0,+f.stock||0)}));
-const accounts=()=>{
-  const a=rd(K.acc,[]);return Array.isArray(a)?a:[]
-};
-const me=()=>accounts().find(a=>a.email===localStorage.getItem(K.ses))||null;
-const updateMe=(patch)=>{
-  const m=me();if(!m)return false;return wr(K.acc,accounts().map(a=>a.email===m.email?{...a,...patch}:a))
+
+function seedFood() {
+  return [
+    { id: 1, name: 'Chicken Adobo Rice Bowl', desc: 'Soy-vinegar braised chicken over rice.', cat: 'Meals', price: 75, stock: 12, emoji: '🍗', image: '' },
+    { id: 2, name: 'Veggie Lumpia', desc: 'Crispy rolls with sweet chili dip.', cat: 'Snacks', price: 35, stock: 8, emoji: '🥬', image: '' },
+    { id: 3, name: 'Spaghetti with Hotdog', desc: 'Sweet-style spaghetti, sliced hotdog.', cat: 'Meals', price: 60, stock: 4, emoji: '🍝', image: '' },
+    { id: 4, name: 'Iced Calamansi Tea', desc: 'Cold tea with fresh calamansi.', cat: 'Drinks', price: 25, stock: 15, emoji: '🧋', image: '' },
+    { id: 5, name: 'Ube Cheese Pandesal', desc: 'Soft ube bread with melted cheese.', cat: 'Desserts', price: 30, stock: 3, emoji: '🍞', image: '' },
+    { id: 6, name: 'Banana Cue', desc: 'Caramelized fried saba banana.', cat: 'Snacks', price: 20, stock: 0, emoji: '🍌', image: '' },
+  ];
+}
+
+function seedOrders() {
+  const ago = (min) => new Date(Date.now() - min * 60000);
+  const time = (d) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit' }).format(d);
+  const make = (id, student, items, status, min, note) => {
+    const d = ago(min);
+    return {
+      id, student, items, status, note,
+      total: items.reduce((s, i) => s + i.qty * i.price, 0),
+      createdAt: d.toISOString(),
+      date: `Today, ${time(d)}`,
+    };
   };
-const myOrders=()=>{
-  const m=me();return m?(rd(K.orders,[])||[]).filter(o=>o.studentId===m.email):[]
+  return [
+    make('#001', 'Alex Santos', [{ name: 'Chicken Adobo Rice Bowl', qty: 1, price: 75 }, { name: 'Iced Calamansi Tea', qty: 1, price: 25 }], STATUS.READY, 40, 'No onions, please.'),
+    make('#002', 'Maria Cruz', [{ name: 'Veggie Lumpia', qty: 2, price: 35 }], STATUS.PENDING, 25, 'Extra sweet chili sauce.'),
+    make('#003', 'Jon Reyes', [{ name: 'Spaghetti with Hotdog', qty: 1, price: 60 }], STATUS.DONE, 70, ''),
+  ];
+}
+
+const Store = {
+  food: [],
+  orders: [],
+  admin: { ...DEFAULT_ADMIN },
+
+  read(key, fallback) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v ?? fallback;
+    } catch { return fallback; }
+  },
+
+  /* Returns false when the browser refuses (usually: storage full). */
+  write(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch { return false; }
+  },
+
+  /* Re-read food + orders so we never overwrite changes made by the
+     student page (e.g. a brand new order). Call before every change. */
+  loadShared() {
+    let food = this.read(KEYS.food, null);
+    let orders = this.read(KEYS.orders, null);
+    if (!Array.isArray(food)) { food = seedFood(); this.write(KEYS.food, food); }
+    if (!Array.isArray(orders)) { orders = seedOrders(); this.write(KEYS.orders, orders); }
+
+    this.food = food.map((f) => ({
+      desc: '', image: '', emoji: '🍽️',
+      ...f,
+      price: Number(f.price) || 0,
+      stock: Math.max(0, Number(f.stock) || 0),
+    }));
+    this.orders = orders.map((o) => ({
+      ...o,
+      
+      items: Array.isArray(o.items) ? o.items : [{ name: String(o.items || 'Item'), qty: 1, price: Number(o.total) || 0 }],
+    }));
+  },
+
+  loadAdmin() {
+    this.admin = { ...DEFAULT_ADMIN, ...this.read(KEYS.admin, {}) };
+  },
+  load() { this.loadShared(); this.loadAdmin(); },
+
+  saveFood() { return this.write(KEYS.food, this.food); },
+  saveOrders() { return this.write(KEYS.orders, this.orders); },
+  saveAdmin() { return this.write(KEYS.admin, this.admin); },
+
+
+  changeFood(fn) { this.loadShared(); fn(this.food); return this.saveFood(); },
+  changeOrders(fn) { this.loadShared(); fn(this.orders); return this.saveOrders(); },
+
+  categories() {
+    const used = this.food.map((f) => f.cat);
+    return [...new Set([...used, ...this.admin.extraCats])].filter(Boolean).sort();
+  },
+
+  
+  isSignedIn() { return sessionStorage.getItem(KEYS.session) === '1'; },
+  signIn() { sessionStorage.setItem(KEYS.session, '1'); },
+  signOut() { sessionStorage.removeItem(KEYS.session); },
 };
-
-const S={view:'login',page:'menu',cat:'All',q:'',cart:[],note:'',tab:'info',receipt:null,sig:'',seen:{},lock:0,fails:0,idleAt:Date.now(),showLrn:false};
-
-/*  Cart (stock is only taken when the order is placed)  */
-function cartLines(){const f=foods();return S.cart.map(c=>{const x=f.find(i=>i.id===c.id);return x?{...x,qty:Math.min(c.qty,x.stock)}:null}).filter(l=>l&&l.qty>0)}
-const total=()=>cartLines().reduce((s,l)=>s+l.qty*l.price,0);
-const cartN=()=>cartLines().reduce((s,l)=>s+l.qty,0);
-function addCart(id,d){const f=foods().find(x=>x.id===id);if(!f)return;let c=S.cart.find(x=>x.id===id);if(!c){c={id,qty:0};S.cart.push(c)}
-  if(d>0&&c.qty>=f.stock)return toast(`Only ${f.stock} left of ${f.name}`,1);c.qty+=d;if(c.qty<=0)S.cart=S.cart.filter(x=>x!==c);if(d>0)toast('Added to cart');render()}
-
-function placeOrder(){
-  const m=me();const lines=cartLines();if(!m||!lines.length)return;
-  const food=rd(K.food,[]);const orders=rd(K.orders,[])||[];   // re-read: never overwrite admin changes
-  for(const l of lines){const f=food.find(x=>x.id===l.id);if(!f||(+f.stock||0)<l.qty){toast(`${l.name} just ran low. Your cart was updated.`,1);return render()}}
-  lines.forEach(l=>{const f=food.find(x=>x.id===l.id);f.stock=(+f.stock||0)-l.qty});
-  const max=Math.max(0,...orders.map(o=>+String(o.id||'').replace(/\D/g,'')||0));
-  const now=new Date();
-  const o={id:'#'+String(max+1).padStart(3,'0'),studentId:m.email,student:m.name,createdAt:now.toISOString(),
-    date:new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short'}).format(now),status:'Pending',
-    items:lines.map(l=>({name:l.name,qty:l.qty,price:l.price})),note:S.note.trim(),total:total()};
-  orders.unshift(o);
-  if(!wr(K.food,food)||!wr(K.orders,orders))return toast('Could not save the order. Try again.',1);
-  S.cart=[];S.note='';S.receipt=o.id;S.page='receipt';S.sig=sig();toast('Order placed! The canteen can see it now.');render();
-}
-
-function reorder(id){
-  const o=myOrders().find(x=>x.id===id);if(!o)return;const f=foods();let n=0;
-  o.items.forEach(i=>{const x=f.find(y=>y.name===i.name);if(x&&x.stock>0){S.cart.push({id:x.id,qty:Math.min(i.qty,x.stock)});n++}});
-  toast(n?`${n} item${n>1?'s':''} added to your cart`:'Those items are unavailable right now',!n);if(n){S.page='cart'}render()
-}
