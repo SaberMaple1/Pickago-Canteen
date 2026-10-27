@@ -25,7 +25,7 @@ function render() {
   app.innerHTML = `
   <div class="shell">
     <aside class="rail">
-      <div class="brand"><span class="mark">P</span>Pickago</div>
+      <div class="brand"><img class="logo" src="pickago_Logo.png" alt="">Pickago</div>
       <nav aria-label="Main">${navButtons()}</nav>
       <p class="rail-foot">Canteen portal</p>
     </aside>

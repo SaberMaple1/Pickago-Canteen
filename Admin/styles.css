@@ -84,6 +84,8 @@ svg.i { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-
   background: var(--accent); color: var(--accent-ink);
   display: grid; place-items: center; font-weight: 800; font-size: 1.2rem;
 }
+.logo { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex: none; display: block; }
+.logo-lg { width: 150px; height: 150px; position: relative; z-index: 1; box-shadow: 0 6px 24px rgba(0,0,0,.25); }
 .rail nav { display: grid; gap: .25rem; }
 .nav-btn {
   display: flex; align-items: center; gap: .7rem;
@@ -307,6 +309,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1.4rem 0; }
   .login { grid-template-columns: 1fr; }
   .login-art { padding: 1.5rem; min-height: 170px; }
   .login-art h2 { font-size: 1.5rem; }
+  .logo-lg { width: 84px; height: 84px; }
   .login-art::after { width: 200px; height: 200px; }
   .scrim { align-items: end; padding: 0; }
   .sheet { border-radius: 20px 20px 0 0; width: 100%; max-height: 92vh; padding-bottom: calc(1.4rem + env(safe-area-inset-bottom, 0px)); }

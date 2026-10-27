@@ -44,7 +44,7 @@ function loginPage() {
   return `
   <section class="login">
     <div class="login-art">
-      <div class="brand"><span class="mark">P</span>Pickago</div>
+      <img class="logo logo-lg" src="pickago_Logo.png" alt="Pickago">
       <h2>Fresh orders, ready when students are.</h2>
     </div>
     <div class="login-form">
