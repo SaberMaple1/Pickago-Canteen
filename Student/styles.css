@@ -203,12 +203,24 @@ button {
 .logo {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
-  background: var(--pop);
-  color: var(--popink);
-  display: grid;
-  place-items: center;
-  font: 800 1.3rem 'Bricolage Grotesque';
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex: none;
+}
+.logo-lg {
+  width: 150px;
+  height: 150px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+.logo-md {
+  width: 84px;
+  height: 84px;
+}
+.logo-m {
+  display: none;
 }
 .brand {
   display: flex;
@@ -642,6 +654,15 @@ dd {
   }
   .hero-side {
     display: none;
+  }
+  .auth-form {
+    flex-direction: column;
+  }
+  .logo-m {
+    display: block;
+    width: 110px;
+    height: 110px;
+    margin-bottom: 0.5rem;
   }
   .nav,
   .me span {

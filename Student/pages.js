@@ -2,7 +2,7 @@ const LABEL = { menu: 'Menu', cart: 'Cart', history: 'Orders', profile: 'Profile
 
 function authView() {
   const side = `<aside class="hero-side">
-    <div class="brand"><span class="logo">P</span>Pickago</div>
+    <img class="logo logo-lg" src="pickago_Logo.png" alt="Pickago" />
     <div style="position:relative;z-index:1">
       <h1>Good food, ready when you are.</h1>
       <p>Order from your school canteen, skip the queue, and pick it up when it’s ready.</p>
@@ -102,7 +102,7 @@ function authView() {
     </form>`;
   return `<div class="auth">
     ${side}
-    <section class="auth-form">${f}</section>
+    <section class="auth-form"><img class="logo logo-m" src="pickago_Logo.png" alt="Pickago" />${f}</section>
   </div>`;
 }
 
@@ -299,7 +299,7 @@ function receiptPage() {
   return `<button class="btn" data-a="nav" data-p="history">← My orders</button>
     <section class="card" style="max-width:480px;margin:1rem auto">
       <div style="text-align:center">
-        <div class="logo" style="margin:0 auto .5rem">P</div>
+        <img class="logo logo-md" src="pickago_Logo.png" alt="Pickago" style="margin:0 auto .5rem" />
         <h2>Order ${esc(o.id)}</h2>
         <p class="mute">${esc(o.date)}</p>
         <span class="badge ${o.status.split(' ')[0]}">${esc(o.status)} </span>
@@ -537,7 +537,7 @@ function render() {
       )
       .join('');
   app.innerHTML = `<header class="top">
-      <button class="brand" data-a="nav" data-p="menu"><span class="logo">P</span>Pickago</button>
+      <button class="brand" data-a="nav" data-p="menu"><img class="logo" src="pickago_Logo.png" alt="" />Pickago</button>
       <nav class="nav" aria-label="Main">${nav()}</nav>
       <button class="me" data-a="nav" data-p="profile">
         ${avatar(m)}<span>${esc(m.name.split(' ')[0])}</span>
